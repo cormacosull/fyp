@@ -1,5 +1,5 @@
-import requests
 import urllib.parse
+import requests
 
 # Constants similar to the JavaScript version
 ABAIR_TTS_VOICES = {
@@ -7,6 +7,10 @@ ABAIR_TTS_VOICES = {
     "PIPER": {
         "CONNACHT": "ga_CO_snc_piper"
     }
+}
+ABAIR_TIMING_INFO = {
+    "BASE_TIMING_URL" : "https://synthesis.abair.ie/piper/synthesise?input=",
+    "URL_END": "&voice=snc.piper&timing=true"
 }
 
 def get_abair_tts_url(text, speed=1, pitch=1, voice=ABAIR_TTS_VOICES["PIPER"]["CONNACHT"]):
@@ -18,7 +22,28 @@ def get_abair_tts_url(text, speed=1, pitch=1, voice=ABAIR_TTS_VOICES["PIPER"]["C
     )
     return url
 
+def get_abair_timing_url(text):
+    # Construct the URL
+    url = (
+        f"{ABAIR_TIMING_INFO['BASE_TIMING_URL']}"
+        f"{urllib.parse.quote(text)}"
+        f"{ABAIR_TIMING_INFO['URL_END']}"
+    )
+    return url
+
 # Example usage
 text = "ta me go maith"
 url = get_abair_tts_url(text)
+timing = get_abair_timing_url(text)
 print(url)
+print(timing)
+
+
+# Example: Fetching the data from an API endpoint
+response = requests.get(timing)
+data = response.json()
+
+
+timing = data['timing']
+print("Timing:", timing)
+
