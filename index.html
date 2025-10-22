@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Face Rig Scene</title>
+    <style>
+      body { margin: 0; overflow: hidden; background: #111; }
+    </style>
+  </head>
+  <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.165/build/three.module.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from 'three';
+
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x111111);
+
+      const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+      camera.position.z = 3;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(innerWidth, innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(3, 3, 5);
+      scene.add(light);
+
+      const geometry = new THREE.SphereGeometry(1, 32, 32);
+      const material = new THREE.MeshStandardMaterial({ color: 0x44ccff });
+      const head = new THREE.Mesh(geometry, material);
+      scene.add(head);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        head.rotation.y += 0.01;
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // Handle messages from React Native
+      window.document.addEventListener('message', (event) => {
+        const data = JSON.parse(event.data);
+        if (data.rotate) head.rotation.y += data.rotate;
+      });
+    </script>
+  </body>
+</html>
