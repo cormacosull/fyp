@@ -1,178 +1,130 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Three.js Face Rig</title>
-    <style>
-      body { margin: 0; overflow: hidden; background-color: #111; }
-      canvas { display: block; }
-    </style>
-  </head>
-  <body>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.165/build/three.module.js",
-          "GLTFLoader": "https://cdn.jsdelivr.net/npm/three@0.165/examples/jsm/loaders/GLTFLoader.js"
-        }
-      }
-    </script>
-
-    <script type="module">
-      import * as THREE from 'three';
-      import { GLTFLoader } from 'GLTFLoader';
-
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x111111);
-
-      const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
-      camera.position.set(0, 1.5, 3);
-
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(innerWidth, innerHeight);
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
-      document.body.appendChild(renderer.domElement);
-
-      // Lighting
-      const light = new THREE.DirectionalLight(0xffffff, 2);
-      light.position.set(2, 2, 5);
-      scene.add(light);
-      scene.add(new THREE.AmbientLight(0xffffff, 0.3));
-
-      // Load the face model
-      const loader = new GLTFLoader();
-      loader.load(
-        './assets/patrick.glb',
-        (gltf) => {
-          const model = gltf.scene;
-          model.scale.set(1, 1, 1);
-          scene.add(model);
-
-          function animate() {
-            requestAnimationFrame(animate);
-            model.rotation.y += 0.01;
-            renderer.render(scene, camera);
-          }
-          animate();
-
-          // Handle messages from React Native
-          window.document.addEventListener('message', (event) => {
-            const data = JSON.parse(event.data);
-            if (data.rotate) model.rotation.y += data.rotate;
-          });
-        },
-        undefined,
-        (err) => console.error('Error loading GLB:', err)
-      );
-
-      window.addEventListener('resize', () => {
-        camera.aspect = innerWidth / innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(innerWidth, innerHeight);
-      });
-    </script>
-  </body>
-</html> -->
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Three.js Face Rig</title>
-    <style>
-      body { margin: 0; overflow: hidden; background-color: #111; }
-      canvas { display: block; }
-    </style>
-  </head>
-  <body>
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.165/build/three.module.js",
-          "GLTFLoader": "https://cdn.jsdelivr.net/npm/three@0.165/examples/jsm/loaders/GLTFLoader.js"
-        }
-      }
-    </script>
+<head>
+  <meta charset="UTF-8">
+  <title>Viseme Morph Cycle</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    canvas { display: block; }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-    <script type="module">
-      import * as THREE from 'three';
-      import { GLTFLoader } from 'GLTFLoader';
+    const MODEL_URL = 'https://models.readyplayer.me/6910af3648062250a47e49c1.glb?morphTargets=Oculus%20Visemes';
 
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x111111);
+    let scene, camera, renderer, controls;
+    let meshesWithMorphs = [];
+    let visemeNames = [];
+    let currentVisemeIndex = 0;
+    const VIS_DURATION = 300; // 2 seconds
 
-      const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 100);
+    init();
+    animate();
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xeeeeee);
+
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.set(0, 1.5, 3);
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(innerWidth, innerHeight);
-      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      // Lighting
-      const light = new THREE.DirectionalLight(0xffffff, 2);
-      light.position.set(2, 2, 5);
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 1.4, 0);
+      controls.update();
+
+      const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
       scene.add(light);
-      scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
       const loader = new GLTFLoader();
-      loader.load(
-        './assets/myavatarwithmorphs.glb', // make sure this avatar includes Oculus viseme morph targets
-        (gltf) => {
-          const model = gltf.scene;
-          model.scale.set(1, 1, 1);
-          scene.add(model);
+      loader.load(MODEL_URL, (gltf) => {
+        scene.add(gltf.scene);
 
-          // Find the skinned mesh that has morph targets (usually the head or face)
-          let headMesh;
-          model.traverse((obj) => {
-            if (obj.isMesh && obj.morphTargetDictionary) headMesh = obj;
-          });
-
-          // Prepare viseme cycling
-          let visemeNames = [];
-          if (headMesh && headMesh.morphTargetDictionary) {
-            visemeNames = Object.keys(headMesh.morphTargetDictionary)
-              .filter(name => name.startsWith('viseme_') || name === 'laughter');
+        // Find all meshes with morph targets
+        gltf.scene.traverse((child) => {
+          if ((child.isMesh || child.isSkinnedMesh) &&
+              child.morphTargetDictionary &&
+              child.morphTargetInfluences) {
+            meshesWithMorphs.push(child);
+            console.log(`Found mesh with morphs: ${child.name}`);
           }
+        });
 
-          let currentViseme = 0;
-          let lastSwitch = 0;
+        if (meshesWithMorphs.length === 0) {
+          console.error('No morph-capable meshes found.');
+          return;
+        }
 
-          function animate(time) {
-            requestAnimationFrame(animate);
+        // Collect unique viseme names across all meshes
+        const allVisemes = new Set();
+        meshesWithMorphs.forEach(mesh => {
+          Object.keys(mesh.morphTargetDictionary).forEach(name => allVisemes.add(name));
+        });
+        visemeNames = Array.from(allVisemes);
+        console.log('Viseme names:', visemeNames);
 
-            // Reset all morph targets
-            if (headMesh && visemeNames.length > 0) {
-              for (let i = 0; i < visemeNames.length; i++) {
-                const idx = headMesh.morphTargetDictionary[visemeNames[i]];
-                headMesh.morphTargetInfluences[idx] = 0;
-              }
-
-              // Change viseme once per second
-              if (time - lastSwitch > 1000) {
-                currentViseme = (currentViseme + 1) % visemeNames.length;
-                lastSwitch = time;
-              }
-
-              const activeName = visemeNames[currentViseme];
-              const activeIdx = headMesh.morphTargetDictionary[activeName];
-              headMesh.morphTargetInfluences[activeIdx] = 1.0;
-            }
-
-            renderer.render(scene, camera);
-          }
-
-          animate();
-        },
-        undefined,
-        (err) => console.error('Error loading GLB:', err)
-      );
-
-      window.addEventListener('resize', () => {
-        camera.aspect = innerWidth / innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(innerWidth, innerHeight);
+        // Start cycling
+        setInterval(cycleViseme, VIS_DURATION);
+      },
+      undefined,
+      (err) => {
+        console.error('Model load error:', err);
       });
-    </script>
-  </body>
+
+      window.addEventListener('resize', onWindowResize);
+    }
+
+    function cycleViseme() {
+      const name = visemeNames[currentVisemeIndex];
+      console.log(`Activating viseme: ${name}`);
+
+      meshesWithMorphs.forEach(mesh => {
+        const dict = mesh.morphTargetDictionary;
+        const influences = mesh.morphTargetInfluences;
+
+        // Reset all
+        for (let i = 0; i < influences.length; i++) {
+          influences[i] = 0;
+        }
+
+        const index = dict[name];
+        if (index !== undefined) {
+          influences[index] = 1.0;
+          console.log(` -> Applied to mesh: ${mesh.name}`);
+        }
+      });
+
+      currentVisemeIndex = (currentVisemeIndex + 1) % visemeNames.length;
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+  </script>
+</body>
 </html>
+
