@@ -1,0 +1,58 @@
+body {
+         margin: 0;
+         font-family: sans-serif;
+         display: flex;
+         height: 100vh;
+         overflow: hidden;
+         }
+         #viewer {
+         flex: 1;
+         }
+         #ui {
+         width: 350px;
+         background: #ddd;
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         border-left: 5px solid #000000;
+         }
+         #ui h2 {
+         font-size: 1.2em;
+         margin-bottom: 10px;
+         text-align: center;
+         }
+         #ui borderThing {
+         border-bottom: 3px dotted #000000;
+         width: 90%;
+         margin: 10px 0;
+         }
+         #ui textarea {
+         resize: none;
+         text-align: center;
+         width: 90%;
+         height: 100px;
+         border-radius: 2px;
+         font-size: 1rem;
+         margin-bottom: 10px;
+         }
+         #ui #resultOutput {
+         resize: none;
+         text-align: center;
+         width: 90%;
+         height: 200px;
+         border-radius: 2px;
+         font-size: 1rem;
+         margin-bottom: 10px;
+         }
+         #ui button {
+         resize: none;
+         width: 90%;
+         padding: 3px;
+         border: 2px solid #000000;
+         border-radius: 2px;
+         background-color: #999;
+         font-size: 1rem;
+         margin-bottom: 10px;
+         cursor: pointer;
+         }

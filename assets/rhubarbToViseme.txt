@@ -1,0 +1,27 @@
+RHUBARB_TO_OCULUS = {
+    "X": "viseme_sil",
+
+    # Closed lips / bilabials
+    "A": "viseme_PP",
+
+    # Slightly open clenched teetch
+    "B": "viseme_kk"
+
+    # Open mouth (eh, schwa)
+    "C": "viseme_e",
+
+    # Wide mouth (ah)
+    "D": "viseme_aa",
+
+    # Rounded mouth (o)
+    "E": "viseme_O",
+
+    # Puckered / tight round (u)
+    "F": "viseme_U",
+
+    # Teeth on lip (f, v)
+    "G": "viseme_FF",   
+
+    # open mouth + Tongue up (l,)
+    "H": "viseme_nn"
+}
