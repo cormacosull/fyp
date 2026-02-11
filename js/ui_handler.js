@@ -1,4 +1,4 @@
-import { playVisemes, parsePhonemeTiming } from './viseme_logic.js';
+import { playVisemes } from './viseme_logic.js';
 import { meshesWithMorphs } from './three_js.js';
 
 export function getAudioMode() {
@@ -16,6 +16,7 @@ export async function submitText() {
     const resultBox = document.getElementById('resultOutput');
     resultBox.value = '';
 
+    //if wav
     if (mode === 'wav') {
         const fileInput = document.getElementById('wavInput');
         const file = fileInput.files[0];
@@ -26,19 +27,42 @@ export async function submitText() {
         }
 
         resultBox.value = 'Ag próiseáil WAV...';
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("mode", "wav");
 
-        const audioEl = document.getElementById('ttsAudio');
-        audioEl.src = URL.createObjectURL(file);
-        audioEl.load();
+            const response = await fetch('http://127.0.0.1:5000/timing', {
+                method: 'POST',
+                body: formData
+            });
 
-        audioEl.oncanplay = async () => {
-            audioEl.play();
-        };
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const data = await response.json();
+            resultBox.value = data.phonemes
+                .map(v => `${v.viseme} @ ${v.end.toFixed(2)}s`)
+                .join('\n');
+
+            const audioEl = document.getElementById('ttsAudio');
+            audioEl.src = URL.createObjectURL(file);
+            audioEl.load();
+
+            audioEl.oncanplay = async () => {
+                audioEl.play();
+                playVisemes(data.phonemes, meshesWithMorphs)
+            };
+        } catch (err) {
+            console.error(err);
+            resultBox.value = `Earráid: ${err.message}`;
+        }
         return;
     }
 
     const text = document.getElementById('sentenceInput').value.trim();
 
+    //else
+    //if no text send an error
     if (!text) {
         alert('Cuir isteach abairt ar dtús.');
         return;
@@ -47,6 +71,7 @@ export async function submitText() {
     resultBox.value = 'Ag seoladh...';
 
     try {
+        //send text to backend
         const response = await fetch('http://127.0.0.1:5000/timing', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -55,14 +80,17 @@ export async function submitText() {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
+        //recieve answer
         const data = await response.json();
-        const phonemes = parsePhonemeTiming(data);
+        const phonemes = data.phonemes;
+        console.log("phonemes", phonemes)
 
         if (phonemes.length === 0) {
             resultBox.value = 'Gan toradh ó Abair.';
             return;
         }
 
+        //show in box
         resultBox.value = phonemes
             .map(p => `${p.symbol} → ${p.viseme} @ ${p.end.toFixed(2)}s`)
             .join('\n');
